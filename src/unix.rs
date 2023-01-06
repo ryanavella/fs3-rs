@@ -111,8 +111,9 @@ pub fn allocate(file: &File, len: u64) -> Result<()> {
     if ret == 0 {
         Ok(())
     } else {
-        let err = Error::last_os_error();
-        if err.kind() == ErrorKind::InvalidInput {
+        let err = Error::from_raw_os_error(ret);
+        let unsupported = matches!(ret, libc::ENOTSUP | libc::EOPNOTSUPP);
+        if err.kind() == ErrorKind::InvalidInput || unsupported {
             // Some filesystems do not support fallocate, so make a fallback attempt via the
             // standard ftruncate approach.
             truncate_to(file, len)
